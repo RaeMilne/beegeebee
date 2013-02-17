@@ -1,12 +1,12 @@
 class Watch {
 
   float ht;   // height
-  float wd;
+  float wd; //width
   float x, y; // location
-  float rad;
+  float rad; //radius of rounded corners
   float xspeed; // speed
 
-    // Constructor
+// Constructor
   Watch(float _wd, float _ht, float _rad, float _speed) {
     wd = _wd;
     ht = _ht;
@@ -16,11 +16,7 @@ class Watch {
     xspeed = _speed;
     fill(255);
   }
-
-  void reset() {
-    x = width/2;
-    y = height/2;
-  }
+  
   
   void vibrate() {
     x += xspeed; // Increment x

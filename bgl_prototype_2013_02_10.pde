@@ -1,38 +1,39 @@
-Watch watch;
-Timer timer;
-import processing.serial.*;
+Watch watch; //declare watch object
+Timer timer; //declare timer object
+import processing.serial.*; //import serial library
 
-Serial myPort;
-float vals[] = new float[3];
+Serial myPort; //declare serial object
+float vals[] = new float[3]; //array to hold serial values
 
 String[] face =
 {
   "face_default.svg", "face_error.svg", "face_hi.svg", "face_lo.svg", "face_ok.svg", "face_on.svg"
-};
+}; //face expression files
 
-float onVal = 1;
-float checkVal = 1;
-float errorVal = 1;
-float sensorVal = 1;
+float onVal = 1; //declare button value for "on" button
+float checkVal = 1; //declare button value for "check status" button
+float errorVal = 1; //declare button value for "error" button
+float sensorVal = 0; //declare initial sensor value for potentiometer values (simulate BGL)
 
-int x = 0;
-int y = 0;
-float wd = 200;
-float ht = 150;
-float rad = 6;
-float spd = 3;
-int faceSize = 375;
+int x = 0; //declare x-value for watch
+int y = 0; //declare y-value for watch
+float wd = 200; //declare width of rectangle
+float ht = 150; //declare height of rectangle
+float rad = 6; //declare radius of rounded corners
+float spd = 3; //declare speed of vibration
+int faceSize = 350; //declare size of face expression
 
 final int STATE_OFF = 0;
 final int STATE_ON = 1;
-final int STATE_BCGOK = 2;
-final int STATE_BCGLO = 3;
-final int STATE_BCGHI = 4;
+final int STATE_BGLOK = 2;
+final int STATE_BGLLO = 3;
+final int STATE_BGLHI = 4;
 final int STATE_ERROR = 5;
 final int STATE_DEFAULT = 6;
 
 int state = 0;
 
+//array to hold color values
 color[]palette = {
   #EA2B3B, #FFC50A, #91BD49, #00A8DE //red-0, yellow-1, green-2, blue-3
 };
@@ -45,10 +46,10 @@ void setup() {
   rectMode(CENTER);
 
   int portId = 0;
-  String portName = Serial.list()[portId];
-  myPort = new Serial(this, portName, 9600);
-  timer = new Timer(5000);
-  timer.start();
+  String portName = Serial.list()[portId]; 
+  myPort = new Serial(this, portName, 9600); //create serial object
+  timer = new Timer(7000); //create timer object, declare length of time
+  timer.start(); //start timer
 }
 
 void draw() { 
@@ -60,14 +61,14 @@ void draw() {
   case STATE_ON:
     drawState_On();
     break;
-  case STATE_BCGOK:
-    drawState_BCGOK();
+  case STATE_BGLOK:
+    drawState_BGLOK();
     break;
-  case STATE_BCGLO:
-    drawState_BCGLO();
+  case STATE_BGLLO:
+    drawState_BGLLO();
     break;
-  case STATE_BCGHI:
-    drawState_BCGHI();
+  case STATE_BGLHI:
+    drawState_BGLHI();
     break;
   case STATE_ERROR:
     drawState_Error();
@@ -87,10 +88,10 @@ void drawState_Off() {
 
 
 void drawState_On() {
-  background(0);
-  fill(255);
-  watch.display();
-  watch.displayFace(face[5], faceSize);
+  background(0); //re-initialize
+  fill(palette[3]); //color of watch background
+  watch.display(); //draw the watch background
+  watch.displayFace(face[5], faceSize); //draw the watch expression
   if (timer.isFinished()) {    
     state = STATE_DEFAULT;
   }
@@ -99,37 +100,36 @@ void drawState_On() {
 void drawState_Default() {
 
   background(0);
-  fill(255);
+  fill(palette[3]);
   watch.display();
   watch.displayFace(face[0], faceSize);
   if (checkVal == 0) {
-    state = STATE_BCGOK;
+    state = STATE_BGLOK;
   } 
   else if (sensorVal > 150 && errorVal != 0) {
-    state = STATE_BCGHI;
+    state = STATE_BGLHI;
   } 
   else if (sensorVal < 100 && errorVal != 0) {
-    state = STATE_BCGLO;
+    state = STATE_BGLLO;
   } 
   else if (errorVal == 0 ) {
     state = STATE_ERROR;
   };
 }
 
-void drawState_BCGOK() {
+void drawState_BGLOK() {
 
   if (checkVal == 0) {
-
     background(0);
     fill(palette[3]);
     watch.display();
     watch.displayFace(face[4], faceSize);
   } 
   else if (sensorVal > 150 && errorVal != 0) {
-    state = STATE_BCGHI;
+    state = STATE_BGLHI;
   } 
   else if (sensorVal < 100 && errorVal != 0) {
-    state = STATE_BCGLO;
+    state = STATE_BGLLO;
   } 
   else if (errorVal == 0 ) {
     state = STATE_ERROR;
@@ -139,7 +139,8 @@ void drawState_BCGOK() {
   };
 }
 
-void drawState_BCGHI() {
+void drawState_BGLHI() {
+  
   background(0);
   fill(palette[0]);
   watch.vibrate();
@@ -150,17 +151,18 @@ void drawState_BCGHI() {
     state = STATE_DEFAULT;
   } 
   else if (sensorVal < 100 && errorVal != 0) {
-    state = STATE_BCGLO;
+    state = STATE_BGLLO;
   } 
   else if (errorVal == 0) {
     state = STATE_ERROR;
   }
 }
 
-void drawState_BCGLO() {
+void drawState_BGLLO() {
+  
   background(0);
   fill(palette[1]);
-  watch.vibrate();
+  watch.vibrate(); //vibrate the watch
   watch.display();
   watch.displayFace(face[3], faceSize);
 
@@ -168,11 +170,11 @@ void drawState_BCGLO() {
     state = STATE_DEFAULT;
   } 
   else if (sensorVal > 150 && errorVal != 0) {
-    state = STATE_BCGHI;
+    state = STATE_BGLHI;
   } 
   else if (errorVal == 0) {
     state = STATE_ERROR;
-  } 
+  }
 }
 
 void drawState_Error() {
@@ -183,13 +185,13 @@ void drawState_Error() {
   watch.displayFace(face[1], faceSize);
 
   if (sensorVal < 150 && sensorVal > 100 && errorVal != 0) {
-    state = STATE_BCGOK;
+    state = STATE_BGLOK;
   } 
   else if (sensorVal > 150 && sensorVal < 195 && errorVal != 0) {
-    state = STATE_BCGHI;
+    state = STATE_BGLHI;
   } 
   else if (sensorVal < 100 && errorVal != 0) {
-    state = STATE_BCGLO;
+    state = STATE_BGLLO;
   }
 }
 
@@ -214,4 +216,5 @@ void serialEvent( Serial ard_port) {
     }
   }
 }
+
 
