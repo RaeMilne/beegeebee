@@ -52,6 +52,7 @@ class Watch {
     PShape s;
     s = loadShape("cover.svg");
     shape(s, width/2, height/2, _size, _size);
+    
   }
 }
 

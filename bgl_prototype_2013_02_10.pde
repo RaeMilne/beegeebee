@@ -35,11 +35,11 @@ final int STATE_BGLLO = 3;
 final int STATE_BGLHI = 4;
 final int STATE_ERROR = 5;
 final int STATE_DEFAULT = 6;
-//final int STATE_OK-A = 7;
-//final int STATE_OK-B = 8;
-//final int STATE_OK-C = 9;
-//final int STATE_OK-D = 10;
-//final int STATE_OK-Good = 11;
+final int STATE_A = 7;
+final int STATE_B = 8;
+final int STATE_C = 9;
+final int STATE_D = 10;
+final int STATE_Good = 11;
 
 int lowMax = 60;
 int aMin = 61;
@@ -56,11 +56,11 @@ int highMin = 191;
 int highMax = 205;
 int errorMin = 206;
 
-long timeLapse = 1500;
+long timeLapse = 3000;
 long savedTime;
 
-
 int state = 0; 
+int prevState = 0;
 
 //array to hold color values
 color[]palette = {
@@ -68,8 +68,10 @@ color[]palette = {
     //low-0, a-1, b-2, good-3, c-4, d-5, high-6, error-7, default-8, background-9
 };
 
+color prevColor = palette[8];
+
 void setup() {  
-  size(displayWidth, displayHeight);  
+  size(1280, 800);  
   background(palette[9]);  
   watch = new Watch(wd, ht, rad, spd);
   rectMode(CENTER);
@@ -78,9 +80,9 @@ void setup() {
   minim = new Minim(this);
 
   onSound = minim.loadFile("on_magic-chime-01.mp3");
-  highSound = minim.loadFile("low_button-2.mp3");
-  happySound = minim.loadFile("check_button-35.mp3");
-  lowSound = minim.loadFile("low_button-2.mp3");
+  highSound = minim.loadFile("woop-woop.mp3");
+  happySound = minim.loadFile("beep-24.mp3");
+  lowSound = minim.loadFile("woop-woop.mp3");
   errorSound = minim.loadFile("high_button-8.mp3");
 
   int portId = 0;
@@ -111,6 +113,18 @@ void draw() {
     break;
   case STATE_BGLOK:
     drawState_BGLOK();
+    break;
+  case STATE_A:
+    drawState_A();
+    break;
+  case STATE_B:
+    drawState_B();
+    break;
+  case STATE_C:
+    drawState_C();
+    break;
+  case STATE_D:
+    drawState_D();
     break;
   case STATE_BGLLO:
     drawState_BGLLO();
@@ -146,57 +160,73 @@ void drawState_On() {
   }
 }
 
-void drawState_Default() {
-
-  fill(palette[8]);
+void drawState_Default() { 
+  
+  fill(prevColor);
   rect(width/2, height/2, wd, ht, rad);
-  fill(0);
-
-  //Display Time
-
-  if (hour() < 13) {
-    if (minute() < 10) {
-      text(hour() + ":" + "0" + minute() + "am", width/2, height/2);
-    } 
-    else {
-      text(hour() + ":" + minute() + "am", width/2, height/2-15);
-    }
-  } 
-  else if (hour() >= 13) {
-    int afternoonHour = hour() - 12;
-    if (minute() < 10) {
-      text(afternoonHour + ":" + "0" + minute() + "pm", width/2, height/2);
-    } 
-    else {
-      text(afternoonHour + ":" + minute() + "pm", width/2, height/2);
-    }
+  displayReading();
+  
+  if (millis() - savedTime > timeLapse) {
+    fill(prevColor);
+    rect(width/2, height/2, wd, ht, rad);
+    displayTime();
   }
-
-  //Switch states as necessary
-
+  
   if (btnVal == 0) {
+      fill(prevColor);
+  rect(width/2, height/2, wd, ht, rad);
+  displayReading();
+  }
+    
+if (sensorVal > goodMin && sensorVal < goodMax && prevState != STATE_BGLOK) {
     if (!happySound.isPlaying()) {
       happySound.pause();
       happySound.rewind();
     }
-    savedTime = millis();
     state = STATE_BGLOK;
+  } else if (sensorVal > aMin && sensorVal <= aMax && prevState != STATE_A) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_A;
   } 
-  else if (sensorVal > highMin && sensorVal < highMax) {
+  else if (sensorVal > bMin && sensorVal <= bMax && prevState != STATE_B) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_B;
+  } 
+  else if (sensorVal > cMin && sensorVal <= cMax && prevState != STATE_C) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_C;
+  } 
+  else if (sensorVal > dMin && sensorVal <= dMax && prevState != STATE_D) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_D;
+  } 
+  else if (sensorVal > highMin && sensorVal <= highMax && prevState != STATE_BGLHI) {
     if (!highSound.isPlaying()) {
       highSound.pause();
       highSound.rewind();
     }
     state = STATE_BGLHI;
   } 
-  else if (sensorVal < lowMax) {
+  else if (sensorVal < lowMax && prevState != STATE_BGLLO) {
     if (!lowSound.isPlaying()) {
       lowSound.pause();
       lowSound.rewind();
     }
     state = STATE_BGLLO;
   } 
-  else if (sensorVal > errorMin ) {
+  else if (sensorVal > errorMin) {
     if (!errorSound.isPlaying()) {
       errorSound.pause();
       errorSound.rewind();
@@ -206,38 +236,148 @@ void drawState_Default() {
   }
 }
 
+
 void drawState_BGLOK() {
 
-  if (btnVal == 0) {
+  happySound.play();
+  fill(palette[3]);
+  
+  watch.reset();
+  watch.displayFace(face[4], faceSize);
 
-    happySound.play();
-
-    if (sensorVal > aMin && sensorVal <= aMax) {
-      fill(palette[1]);
-    } 
-    else if (sensorVal > bMin && sensorVal <= bMax) {
-      fill(palette[2]);
-    } 
-    else if (sensorVal > cMin && sensorVal <= cMax) {
-      fill(palette[4]);
-    } 
-    else if (sensorVal > dMin && sensorVal <= dMax) {
-      fill(palette[5]);
-    } 
-    else if (sensorVal > goodMin && sensorVal <= goodMax) {
-      fill(palette[3]);
-    }   
-    watch.reset();
-    watch.displayFace(face[4], faceSize);
-
-    if (millis() - savedTime > timeLapse) {
-      displayReading();
-    }
-  } 
-  else {
+  if (btnVal == 0) { 
+    savedTime = millis();
+    prevState = STATE_BGLOK;
+    prevColor = palette[3];
     state = STATE_DEFAULT;
+  } 
+  else if (sensorVal < bMax && sensorVal > bMin) {
+    state = STATE_B;
+  } 
+  else if (sensorVal < cMax && sensorVal > cMin) {
+    state = STATE_C;
   }
 }
+
+void drawState_A() {
+
+  happySound.play();
+  fill(palette[1]);
+  watch.reset();
+  watch.displayFace(face[4], faceSize);
+
+  if (btnVal == 0) {
+    savedTime = millis();
+    prevState = STATE_A;
+    prevColor = palette[1];
+    state = STATE_DEFAULT;
+  } 
+  else if (sensorVal < bMax && sensorVal > bMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_B;
+  } 
+  else if (sensorVal < lowMax) {
+    if (!lowSound.isPlaying()) {
+      lowSound.pause();
+      lowSound.rewind();
+    }
+    state = STATE_BGLLO;
+  }
+}
+
+
+void drawState_B() {
+
+  happySound.play();
+  fill(palette[2]);
+  watch.reset();
+  watch.displayFace(face[4], faceSize);
+
+  if (btnVal == 0) {
+    savedTime = millis();
+    prevState = STATE_B;
+    prevColor = palette[2];
+    state = STATE_DEFAULT;
+  } 
+  else if (sensorVal < goodMax && sensorVal > goodMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_BGLOK;
+  } 
+  else if (sensorVal < aMax && sensorVal > aMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_A;
+  }
+}
+
+
+void drawState_C() {
+
+  happySound.play();
+  fill(palette[4]);
+  watch.reset();
+  watch.displayFace(face[4], faceSize);
+
+  if (btnVal == 0) {
+    savedTime = millis();
+    prevState = STATE_C;
+    prevColor = palette[4];
+    state = STATE_DEFAULT;
+  } 
+  else if (sensorVal < goodMax && sensorVal > goodMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_BGLOK;
+  } 
+  else if (sensorVal < dMax && sensorVal > dMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_D;
+  }
+}
+
+
+void drawState_D() {
+
+  happySound.play();
+  fill(palette[5]);
+  watch.reset();
+  watch.displayFace(face[4], faceSize);
+
+  if (btnVal == 0) {
+    savedTime = millis();
+    prevState = STATE_D;
+    prevColor = palette[5];
+    state = STATE_DEFAULT;
+  } 
+  else if (sensorVal < cMax && sensorVal > cMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
+    }
+    state = STATE_C;
+  } 
+  else if (sensorVal > highMin && sensorVal < highMax) {
+    if (!highSound.isPlaying()) {
+      highSound.pause();
+      highSound.rewind();
+    }
+    state = STATE_BGLHI;
+  }
+}
+
 
 void drawState_BGLHI() {
 
@@ -245,9 +385,15 @@ void drawState_BGLHI() {
   fill(palette[6]);
   watch.vibrate();
   watch.displayFace(face[2], faceSize);
-  displayReading();
-  if (sensorVal < highMin) {
+
+  if (btnVal == 0) {
+    savedTime = millis();
+    prevState = STATE_BGLHI;
+    prevColor = palette[6];
     state = STATE_DEFAULT;
+  } 
+  else if (sensorVal < highMin) {
+    state = STATE_D;
   } 
   else if (sensorVal > errorMin) {
 
@@ -265,22 +411,19 @@ void drawState_BGLLO() {
   watch.vibrate(); //vibrate the watch
   fill(palette[0]);
   watch.displayFace(face[3], faceSize);
-  displayReading();
 
-  if (sensorVal < goodMax && sensorVal > goodMin) {
+  if (btnVal == 0) {
+    savedTime = millis();
+    prevState = STATE_BGLLO;
+    prevColor = palette[0];
     state = STATE_DEFAULT;
   } 
-  else if (sensorVal > lowMax) {
-    state = STATE_DEFAULT;
-  } 
-  else if (sensorVal > errorMin) {
-
-    if (!errorSound.isPlaying()) {
-      errorSound.pause();
-      errorSound.rewind();
+  else if (sensorVal > aMin) {
+    if (!happySound.isPlaying()) {
+      happySound.pause();
+      happySound.rewind();
     }
-
-    state = STATE_ERROR;
+    state = STATE_A;
   }
 }
 
@@ -295,13 +438,33 @@ void drawState_Error() {
   }
 }
 
-void displayReading() {
 
-  if (btnVal == 0) {
-    rect(width/2, height/2, wd, ht, rad);
-    fill(0);
-    textSize(48);
-    text(int(sensorVal), width/2, height/2);
+void displayReading() {
+  fill(0);
+  textSize(34);
+  text(int(sensorVal) + "mg/dL", width/2, height/2);
+}
+
+void displayTime() {
+
+  fill(0);
+  textSize(46);
+  if (hour() < 13) {
+    if (minute() < 10) {
+      text(hour() + ":" + "0" + minute() + "am", width/2, height/2);
+    } 
+    else {
+      text(hour() + ":" + minute() + "am", width/2, height/2);
+    }
+  } 
+  else if (hour() >= 13) {
+    int afternoonHour = hour() - 12;
+    if (minute() < 10) {
+      text(afternoonHour + ":" + "0" + minute() + "pm", width/2, height/2);
+    } 
+    else {
+      text(afternoonHour + ":" + minute() + "pm", width/2, height/2);
+    }
   }
 }
 
@@ -324,6 +487,8 @@ void serialEvent( Serial ard_port) {
     }
   }
 }
+
+
 
 void stop()
 {
