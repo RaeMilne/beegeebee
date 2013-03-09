@@ -1,3 +1,13 @@
+/*
+
+beegeebee watch prototype
+rae milne and katie mcelroy
+25 february 2013
+
+smart objects with carla diana
+sva ixd | pod
+
+*/
 
 import processing.serial.*; //import serial library
 import ddf.minim.*;
@@ -26,8 +36,9 @@ float ht = 150; //declare height of rectangle
 float rad = 6; //declare radius of rounded corners
 float spd = 6; //declare speed of vibration
 int faceSize = 355; //declare size of face expression
-int coverSize = 320;
+int coverSize = 320; //declare faceplate size
 
+//declare states
 final int STATE_OFF = 0;
 final int STATE_ON = 1;
 final int STATE_BGLOK = 2;
@@ -41,6 +52,7 @@ final int STATE_C = 9;
 final int STATE_D = 10;
 final int STATE_Good = 11;
 
+//declare BGL ranges
 int lowMax = 60;
 int aMin = 61;
 int aMax = 80;
@@ -78,11 +90,12 @@ void setup() {
   noStroke();
 
   minim = new Minim(this);
-
+  
+  //load sound files
   onSound = minim.loadFile("on_magic-chime-01.mp3");
-  highSound = minim.loadFile("woop-woop.mp3");
+  highSound = minim.loadFile("beepbeep.wav");
   happySound = minim.loadFile("beep-24.mp3");
-  lowSound = minim.loadFile("woop-woop.mp3");
+  lowSound = minim.loadFile("beepbeep.wav");
   errorSound = minim.loadFile("high_button-8.mp3");
 
   int portId = 0;
@@ -147,6 +160,7 @@ void drawState_Off() {
 
   rect(width/2, height/2, wd, ht, rad);
   if (btnVal == 0) {
+    savedTime = millis();
     state = STATE_ON;
   }
 }
@@ -155,36 +169,37 @@ void drawState_On() {
   onSound.play();
   fill(255); //color of watch background
   watch.displayFace(face[5], faceSize); //draw the watch expression
-  if (timer.isFinished()) {    
+  if (millis() - savedTime > timeLapse) {    
     state = STATE_DEFAULT;
   }
 }
 
 void drawState_Default() { 
-  
+
   fill(prevColor);
   rect(width/2, height/2, wd, ht, rad);
+
   displayReading();
-  
+
   if (millis() - savedTime > timeLapse) {
     fill(prevColor);
     rect(width/2, height/2, wd, ht, rad);
     displayTime();
   }
-  
+
   if (btnVal == 0) {
-      fill(prevColor);
-  rect(width/2, height/2, wd, ht, rad);
-  displayReading();
-  }
-    
-if (sensorVal > goodMin && sensorVal < goodMax && prevState != STATE_BGLOK) {
+    fill(prevColor);
+    rect(width/2, height/2, wd, ht, rad);
+    displayReading();
+  } 
+  if (sensorVal > goodMin && sensorVal < goodMax && prevState != STATE_BGLOK) {
     if (!happySound.isPlaying()) {
       happySound.pause();
       happySound.rewind();
     }
     state = STATE_BGLOK;
-  } else if (sensorVal > aMin && sensorVal <= aMax && prevState != STATE_A) {
+  } 
+  else if (sensorVal > aMin && sensorVal <= aMax && prevState != STATE_A) {
     if (!happySound.isPlaying()) {
       happySound.pause();
       happySound.rewind();
@@ -241,7 +256,7 @@ void drawState_BGLOK() {
 
   happySound.play();
   fill(palette[3]);
-  
+
   watch.reset();
   watch.displayFace(face[4], faceSize);
 
@@ -438,11 +453,12 @@ void drawState_Error() {
   }
 }
 
-
 void displayReading() {
   fill(0);
-  textSize(34);
-  text(int(sensorVal) + "mg/dL", width/2, height/2);
+  textSize(48);
+  text(int(sensorVal), width/2, height/2-20);
+  textSize(18);
+  text("mg/dL", width/2, height/2+20);
 }
 
 void displayTime() {
@@ -487,7 +503,6 @@ void serialEvent( Serial ard_port) {
     }
   }
 }
-
 
 
 void stop()

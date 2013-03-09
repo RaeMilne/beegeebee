@@ -29,7 +29,7 @@ class Watch {
       shapeMode(CENTER);
     PShape s;
     s = loadShape("hand.svg");
-    shape(s, width/2-150, height/2+30, 900, 900);
+    shape(s, width/2 - 130, height/2 +30, 900, 900);
       fill(0);
       rect(width/2, height/2, wd - 50, ht+100, rad);
   }
